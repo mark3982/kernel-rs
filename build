@@ -1,0 +1,3 @@
+rustc main.rs --opt-level 3 --emit=obj --target=arm-unknown-linux-gnueabi
+arm-ld main.o -o rustk.elf
+arm-objcopy -j .text -O binary rustk.elf rustk.bin

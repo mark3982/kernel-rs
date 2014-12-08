@@ -1,0 +1,1 @@
+qemu-system-arm -m 8 -kernel rustk.bin -serial stdio -machine realview-eb-mpcore
