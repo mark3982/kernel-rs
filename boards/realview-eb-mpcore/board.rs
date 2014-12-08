@@ -6,3 +6,10 @@
     It is produced at this time as a Rust library which is then used by
     the kernel when it is built.
 */
+#![no_std]
+
+extern crate core;
+
+pub fn test() -> int {
+    88
+}

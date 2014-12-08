@@ -1,3 +1,24 @@
+#![feature(lang_items)]
+#![no_std]
+
+#[lang="sized"]
+trait Sized {}
+#[lang="sync"]
+trait Sync {}
+
+#[lang = "stack_exhausted"] extern fn stack_exhausted() {}
+#[lang = "eh_personality"] extern fn eh_personality() {}
+#[lang = "panic_fmt"] fn panic_fmt() -> ! { loop {} }
+
+#[lang = "exchange_heap"]
+#[experimental = "may be renamed; uncertain about custom allocator design"]
+pub static HEAP: () = ();
+
+/// A type that represents a uniquely-owned value.
+#[lang = "owned_box"]
+#[unstable = "custom allocators will add an additional type parameter (with default)"]
+pub struct Box<T>(*mut T);
+
 struct Global {
     heapoffset:     uint,
     curheapndx:     uint

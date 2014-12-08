@@ -3,24 +3,14 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 #![feature(asm)]
+#![feature(globs)]
 
-mod core;
+extern crate board;
+extern crate core;
 
-#[lang="sized"]
-trait Sized {}
-#[lang="sync"]
-trait Sync {}
+use core::*;
 
 static GDT: [u32, ..5] = [0, 1, 2, 3, 4];
-
-#[lang = "exchange_heap"]
-#[experimental = "may be renamed; uncertain about custom allocator design"]
-pub static HEAP: () = ();
-
-/// A type that represents a uniquely-owned value.
-#[lang = "owned_box"]
-#[unstable = "custom allocators will add an additional type parameter (with default)"]
-pub struct Box<T>(*mut T);
 
 #[start]
 fn main(argc: int, argv: *const *const u8) -> int {
@@ -67,6 +57,8 @@ extern fn kstart() {
         Print A then B then C to the serial h/w port.
     */
     let x: Box<uint> = box 3u;
+
+    board::test();
 
     kserdbg_putc(65);   
     kserdbg_putc(66);
