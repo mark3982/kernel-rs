@@ -1,20 +1,71 @@
+#
+# See bottom of file for lines to uncomment.
+#
+#
+
+function build() {
+    $TOOL_RUSTC -C relocation-model=static -C no-stack-check --crate-type rlib ./core/core.rs --target=$ARCH
+    $TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=$ARCH
+    $TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 0 --target=$ARCH
+
+    #
+    # We need to get all the object files out and link
+    # them together which will resolve all the symbol
+    # references between them and produce a final object
+    # file which should have no relocations.
+    #
+    #
+    # This output is likely going to be ELF but it depends
+    # on your LD tool as it will produce whatever it was
+    # compiled or specified to produce.
+    #
+    #
+    # If you produce an ELF it can be used by QEMU depending
+    # on the architecture you are emulating. 
+    #
+    $TOOL_AR xvf lib__main.a
+    rm *-test.o
+    $TOOL_LD *.o -o kernel.elf -Ttext $MEM_BASE
+
+    #
+    # If you need a flat binary then this will do the
+    # trick and can be flashed to a ROM if desired. However
+    # you may want to determine how you want to handle the
+    # `.data` and `.rodata` sections otherwise you will find
+    # bugs.
+    #
+    $TOOL_OBJCOPY -j .text -O binary kernel.elf kernel.bin
+}
+
+
+#
+# Just uncomment the build comment below the build
+# that you want.
+#
+echo "If you see no output then edit this file!"
+
+#
+# These may be different but likely are not.
+#
+TOOL_RUSTC=rustc
 TOOL_AR=ar
+
+#
+# To build ARM image. You will VERY likely
+# need to change these.
+#
 TOOL_LD=arm-ld
 TOOL_OBJCOPY=arm-objcopy
-TOOL_RUSTC=rustc
 ARCH=arm-unknown-linux-gnueabi
 MEM_BASE=0x10000
+#build
 
+#
+# To build X86 image. You will VERY likely
+# need to change these.
+#
 TOOL_LD=i686-ld
 TOOL_OBJCOPY=objcopy
 ARCH=i686-unknown-linux-gnu
 MEM_BASE=0x100000
-
-$TOOL_RUSTC -C relocation-model=static -C no-stack-check --crate-type rlib ./core/core.rs --target=$ARCH
-$TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=$ARCH
-$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 0 --target=$ARCH
-
-$TOOL_AR xvf lib__main.a
-rm *-test.o
-$TOOL_LD *.o -o kernel.elf -Ttext $MEM_BASE
-$TOOL_OBJCOPY -j .text -O binary kernel.elf kernel.bin
+#build
