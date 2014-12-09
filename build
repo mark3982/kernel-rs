@@ -3,12 +3,18 @@ TOOL_LD=arm-ld
 TOOL_OBJCOPY=arm-objcopy
 TOOL_RUSTC=rustc
 ARCH=arm-unknown-linux-gnueabi
+MEM_BASE=0x10000
 
-$TOOL_RUSTC -C no-stack-check --crate-type rlib ./core/core.rs --target=arm-unknown-linux-gnueabi
-$TOOL_RUSTC -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=arm-unknown-linux-gnueabi
-$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 3 --target=arm-unknown-linux-gnueabi
+TOOL_LD=i686-ld
+TOOL_OBJCOPY=objcopy
+ARCH=i686-unknown-linux-gnu
+MEM_BASE=0x100000
 
-$TOOL_AR xvf libmain.a
+$TOOL_RUSTC -C relocation-model=static -C no-stack-check --crate-type rlib ./core/core.rs --target=$ARCH
+$TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=$ARCH
+$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 0 --target=$ARCH
+
+$TOOL_AR xvf lib__main.a
 rm *-test.o
-$TOOL_LD *.o -o kernel.elf -Ttext 0x1000
+$TOOL_LD *.o -o kernel.elf -Ttext $MEM_BASE
 $TOOL_OBJCOPY -j .text -O binary kernel.elf kernel.bin
