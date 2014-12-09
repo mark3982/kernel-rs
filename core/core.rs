@@ -6,9 +6,12 @@ trait Sized {}
 #[lang="sync"]
 trait Sync {}
 
-#[lang = "stack_exhausted"] extern fn stack_exhausted() {}
-#[lang = "eh_personality"] extern fn eh_personality() {}
-#[lang = "panic_fmt"] fn panic_fmt() -> ! { loop {} }
+#[lang = "stack_exhausted"] 
+pub extern fn stack_exhausted() {}
+#[lang = "eh_personality"] 
+pub extern fn eh_personality() {}
+#[lang = "panic_fmt"] 
+pub fn panic_fmt() -> ! { loop {} }
 
 #[lang = "exchange_heap"]
 #[experimental = "may be renamed; uncertain about custom allocator design"]

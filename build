@@ -1,5 +1,9 @@
-#rustc --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=arm-unknown-linux-gnueabi
-#rustc --crate-type rlib ./core/core.rs --target=arm-unknown-linux-gnueabi
-rustc -L . main.rs --opt-level 3 --emit=obj --target=arm-unknown-linux-gnueabi
-arm-ld main.o -o rustk.elf
-arm-objcopy -j .text -O binary rustk.elf rustk.bin
+rustc -C no-stack-check --crate-type rlib ./core/core.rs --target=arm-unknown-linux-gnueabi
+rustc -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=arm-unknown-linux-gnueabi
+rustc -C relocation-model=static --crate-type staticlib -C no-stack-check -L . main.rs --opt-level 3 --target=arm-unknown-linux-gnueabi
+
+ar xvf libmain.a
+rm *-test.o
+arm-ld *.o -o kernel.elf
+
+arm-objcopy -j .text -O binary kernel.elf kernel.bin

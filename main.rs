@@ -12,8 +12,13 @@ use core::*;
 
 static GDT: [u32, ..5] = [0, 1, 2, 3, 4];
 
-#[start]
-fn main(argc: int, argv: *const *const u8) -> int {
+//#[start]
+//pub fn main(argc: int, argv: *const *const u8) -> int {
+//    3
+//}
+
+#[no_mangle]
+pub fn entry() {
     unsafe {
         asm!("mov sp, $0" : : "i"(0x2000u));
     }
@@ -22,18 +27,13 @@ fn main(argc: int, argv: *const *const u8) -> int {
 
     unsafe {
         asm!("b kstart");
-        /*
-            These are things that I really do not want to implement
-            at the moment. Also my `as` implementation has broken
-            and I do not want to use `gas`, also my goal was to get
-            everything in Rust - does this not count!!
-        */
-        asm!("__morestack:");
-        asm!("__aeabi_unwind_cpp_pr0:");
     }
-
-    0
 }
+
+#[no_mangle]
+pub extern fn __morestack() { loop {} }
+#[no_mangle]
+pub extern fn __aeabi_unwind_cpp_pr0() { loop {} }
 
 const SERIAL_BASE: u32 = 0x10009000;
 const SERIAL_FLAG_REGISTER: u32 = 0x18;
@@ -52,7 +52,7 @@ fn kserdbg_putc(c: u8) {
 }
 
 #[no_mangle]
-extern fn kstart() {
+fn kstart() {
     /*
         Print A then B then C to the serial h/w port.
     */
