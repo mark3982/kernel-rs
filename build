@@ -6,9 +6,9 @@ ARCH=arm-unknown-linux-gnueabi
 
 $TOOL_RUSTC -C no-stack-check --crate-type rlib ./core/core.rs --target=arm-unknown-linux-gnueabi
 $TOOL_RUSTC -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=arm-unknown-linux-gnueabi
-$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . main.rs --opt-level 3 --target=arm-unknown-linux-gnueabi
+$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 3 --target=arm-unknown-linux-gnueabi
 
 $TOOL_AR xvf libmain.a
 rm *-test.o
-$TOOL_LD *.o -o kernel.elf
+$TOOL_LD *.o -o kernel.elf -Ttext 0x1000
 $TOOL_OBJCOPY -j .text -O binary kernel.elf kernel.bin

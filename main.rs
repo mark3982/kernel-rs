@@ -18,7 +18,7 @@ static GDT: [u32, ..5] = [0, 1, 2, 3, 4];
 //}
 
 #[no_mangle]
-pub fn entry() {
+pub fn ___entry() {
     unsafe {
         asm!("mov sp, $0" : : "i"(0x2000u));
     }
