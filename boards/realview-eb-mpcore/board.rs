@@ -35,5 +35,7 @@ pub fn debugchar(c: u8) {
 }
 
 pub fn debugstr(s: &str) {
-
+    for c in core::str_u8(s) {
+        debugchar(c);
+    }
 }

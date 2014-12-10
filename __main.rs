@@ -111,5 +111,6 @@ pub fn arm_kstart() {
     board::debugchar(65);   
     board::debugchar(66);
     board::debugchar(67);
+    board::debugstr("hello");
     loop { }
 }

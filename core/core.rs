@@ -26,6 +26,56 @@ extern "rust-intrinsic" {
     pub fn volatile_load<T>(src: *const T) -> T;
     /// Perform a volatile store to the `dst` pointer.
     pub fn volatile_store<T>(dst: *mut T, val: T);
+
+    // Unsafely transforms a value of one type into a value of another type.
+    // Both types must have the same size and alignment, and this guarantee
+    // is enforced at compile-time.
+    pub fn transmute<T,U>(e: T) -> U;
+}
+
+pub enum Option<T> {
+    None,
+    Some(T)
+}
+
+#[lang = "iterator"]
+pub trait Iterator<T> {
+    fn next(&mut self) -> Option<T>;
+}
+
+pub struct StrType {
+    ptr:        uint,
+    size:       uint
+
+}
+
+pub struct U8Iterator {
+    ptr:        StrType,
+    ndx:        uint
+}
+
+impl Iterator<u8> for U8Iterator {
+    fn next(&mut self) -> Option<u8> {
+        let c: u8;
+
+        if self.ndx >= self.ptr.size {
+            return Option::None;
+        }
+
+        unsafe {
+            c = *((self.ptr.ptr + self.ndx) as *const u8);
+        }
+
+        self.ndx += 1;
+
+        Option::Some(c)
+    }
+}
+
+pub fn str_u8(s: &str) -> U8Iterator {
+    unsafe {
+        U8Iterator { ptr: transmute(s), ndx: 0 }
+    }
 }
 
 /// A type that represents a uniquely-owned value.
