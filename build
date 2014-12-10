@@ -2,10 +2,11 @@
 # See bottom of file for lines to uncomment.
 #
 #
+set -e
 
 function build() {
     $TOOL_RUSTC -C relocation-model=static -C no-stack-check --crate-type rlib ./core/core.rs --target=$ARCH
-    $TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/realview-eb-mpcore/board.rs --target=$ARCH
+    $TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/$BOARD/board.rs --target=$ARCH
     $TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 0 --target=$ARCH
 
     #
@@ -34,7 +35,7 @@ function build() {
     # `.data` and `.rodata` sections otherwise you will find
     # bugs.
     #
-    $TOOL_OBJCOPY -j .text -O binary kernel.elf kernel.bin
+    $TOOL_OBJCOPY -j .text -O binary $OUTBASENAME.elf $OUTBASENAME.bin
 }
 
 
@@ -49,6 +50,7 @@ echo "If you see no output then edit this file!"
 #
 TOOL_RUSTC=rustc
 TOOL_AR=ar
+OUTBASENAME=kernel
 
 #
 # To build ARM image. You will VERY likely
@@ -56,9 +58,10 @@ TOOL_AR=ar
 #
 TOOL_LD=arm-ld
 TOOL_OBJCOPY=arm-objcopy
+BOARD=realview-eb-mpcore
 ARCH=arm-unknown-linux-gnueabi
 MEM_BASE=0x10000
-#build
+build
 
 #
 # To build X86 image. You will VERY likely
@@ -66,6 +69,7 @@ MEM_BASE=0x10000
 #
 TOOL_LD=i686-ld
 TOOL_OBJCOPY=objcopy
+BOARD=x86universal
 ARCH=i686-unknown-linux-gnu
 MEM_BASE=0x100000
 #build

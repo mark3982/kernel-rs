@@ -1,5 +1,8 @@
+#![feature(intrinsics)]
 #![feature(lang_items)]
 #![no_std]
+
+#![allow(unused_variables)]
 
 #[lang="sized"]
 trait Sized {}
@@ -16,6 +19,14 @@ pub fn panic_fmt() -> ! { loop {} }
 #[lang = "exchange_heap"]
 #[experimental = "may be renamed; uncertain about custom allocator design"]
 pub static HEAP: () = ();
+
+// partial copy from src/libcore/intrinsics.rs
+extern "rust-intrinsic" {
+    /// Perform a volatile load from the `src` pointer.
+    pub fn volatile_load<T>(src: *const T) -> T;
+    /// Perform a volatile store to the `dst` pointer.
+    pub fn volatile_store<T>(dst: *mut T, val: T);
+}
 
 /// A type that represents a uniquely-owned value.
 #[lang = "owned_box"]
