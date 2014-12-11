@@ -92,6 +92,9 @@ pub extern fn _Unwind_Resume() { loop {} }
 pub extern fn __morestack() { loop {} }
 #[no_mangle]
 pub extern fn __aeabi_unwind_cpp_pr0() { loop {} }
+#[no_mangle]
+pub extern fn __aeabi_unwind_cpp_pr1() { loop {} }
+
 
 #[cfg(target_arch = "x86")]
 #[no_mangle]
@@ -105,12 +108,16 @@ pub fn arm_kstart() {
     /*
         Print A then B then C to the serial h/w port.
     */
-    //let x = box 3u;
+    let x = box 3u;
+
     //board::test();
 
-    board::debugchar(65);   
+    board::debugchar(65);
     board::debugchar(66);
     board::debugchar(67);
     board::debugstr("hello");
+
+    board::init();
+
     loop { }
 }

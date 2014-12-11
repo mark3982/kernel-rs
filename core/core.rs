@@ -1,8 +1,11 @@
+#![feature(macro_rules)]
 #![feature(intrinsics)]
 #![feature(lang_items)]
 #![no_std]
 
 #![allow(unused_variables)]
+
+pub mod heap;
 
 #[lang="sized"]
 trait Sized {}
@@ -13,12 +16,6 @@ trait Sync {}
 pub extern fn stack_exhausted() {}
 #[lang = "eh_personality"] 
 pub extern fn eh_personality() {}
-#[lang = "panic_fmt"] 
-pub fn panic_fmt() -> ! { loop {} }
-
-#[lang = "exchange_heap"]
-#[experimental = "may be renamed; uncertain about custom allocator design"]
-pub static HEAP: () = ();
 
 // partial copy from src/libcore/intrinsics.rs
 extern "rust-intrinsic" {
@@ -33,9 +30,44 @@ extern "rust-intrinsic" {
     pub fn transmute<T,U>(e: T) -> U;
 }
 
+#[macro_export]
+macro_rules! panic(
+    () => (
+    panic!("{}", "explicit panic")
+    );
+    ($msg:expr) => ({
+        static _MSG_FILE_LINE: (&'static str, &'static str, uint) = ($msg, file!(), line!());
+        panic(&_MSG_FILE_LINE)
+    });
+    ($fmt:expr, $($arg:tt)*) => ({
+        #[inline(always)]
+        fn _run_fmt(fmt: &::std::fmt::Arguments) -> ! {
+            static _FILE_LINE: (&'static str, uint) = (file!(), line!());
+                panic_fmt(fmt, &_FILE_LINE)
+            }
+            format_args!(_run_fmt, $fmt, $($arg)*)
+        });
+)
+
 pub enum Option<T> {
     None,
     Some(T)
+}
+
+impl<T> Option<T> {
+    fn is_none(&self) -> bool {
+        match *self {
+            Option::None => true,
+            Option::Some(_) => false
+        }
+    }
+
+    fn unwrap(self) -> T {
+        match self {
+            Option::None => panic!("called `Option::unwrap()` on a `None` value"),
+            Option::Some(val) => val
+        }
+    }
 }
 
 #[lang = "iterator"]
@@ -78,35 +110,15 @@ pub fn str_u8(s: &str) -> U8Iterator {
     }
 }
 
-/// A type that represents a uniquely-owned value.
-#[lang = "owned_box"]
-#[unstable = "custom allocators will add an additional type parameter (with default)"]
-pub struct Box<T>(*mut T);
-
-struct Global {
-    heapoffset:     uint,
-    curheapndx:     uint
+#[cold] #[inline(never)] // this is the slow path, always
+#[lang="panic"]
+pub fn panic(expr_file_line: &(&'static str, &'static str, uint)) -> ! {
+    loop { }
 }
 
-static mut GLOBAL: Global = Global {
-    heapoffset:     0,
-    curheapndx:     0
-};
-
-#[lang="exchange_malloc"]
-#[inline]
-unsafe fn exchange_malloc(size: uint, align: uint) -> *mut u8 {
-    // The most simple heap possible!
-    let ptr: uint;
-    ptr = GLOBAL.heapoffset + GLOBAL.curheapndx;
-    GLOBAL.curheapndx += size;
-
-    ptr as *mut u8
+#[lang = "panic_fmt"] 
+//pub fn panic_fmt(fmt: &fmt::Arguments, file_line: &(&'static str, uint)) -> ! {
+pub fn panic_fmt() {
+    loop { }
 }
 
-#[lang="exchange_free"]
-#[inline]
-unsafe fn exchange_free(ptr: *mut u8, old_size: uint, align: uint) {
-    // The most simple heap possible. It does not support
-    // deallocation!
-}
