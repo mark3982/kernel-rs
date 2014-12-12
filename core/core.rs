@@ -1,12 +1,17 @@
+#![feature(globs)]
 #![feature(macro_rules)]
 #![feature(intrinsics)]
 #![feature(lang_items)]
 #![no_std]
 
+#![allow(dead_code)]
 #![allow(unused_variables)]
+#![allow(unused_mut)]
 
 pub mod heap;
 
+#[lang="copy"]
+trait Copy {}
 #[lang="sized"]
 trait Sized {}
 #[lang="sync"]
@@ -17,8 +22,53 @@ pub extern fn stack_exhausted() {}
 #[lang = "eh_personality"] 
 pub extern fn eh_personality() {}
 
+#[repr(C)]
+pub struct Slice<T> {
+    pub data:   *const T,
+    pub len:    uint,
+}
+
+impl<T> Copy for Slice<T> {}
+
+pub trait Repr<T> for Sized? {
+    fn repr(&self) -> T { unsafe { transmute_copy(&self) } }
+}
+
+pub trait SlicePrelude<T> for Sized? {
+    fn len(&self) -> uint;    
+}
+
+// mem::uninitialized
+pub unsafe fn uninitialized<T>() -> T {
+    uninit::<T>()
+}
+
+pub unsafe fn ptr_read<T>(src: *const T) -> T {
+    let mut tmp: T = uninitialized();
+    copy_nonoverlapping_memory(&mut tmp, src, 1);
+    tmp
+}
+
+pub unsafe fn transmute_copy<T, U>(src: &T) -> U {
+    ptr_read(src as *const T as *const U)
+}
+
+impl<T> Repr<Slice<T>> for [T] { }
+
+impl<T> SlicePrelude<T> for [T] {
+    fn len(&self) -> uint { 
+        self.repr().len
+    }
+}
+
 // partial copy from src/libcore/intrinsics.rs
 extern "rust-intrinsic" {
+    /// Size in bytes including padding.
+    pub fn size_of<T>() -> uint;
+    /// Create an uninitialized value.
+    pub fn uninit<T>() -> T;
+    /// Copies data from one location to another.
+    pub fn copy_nonoverlapping_memory<T>(dst: *mut T, src: *const T, count: uint);
     /// Perform a volatile load from the `src` pointer.
     pub fn volatile_load<T>(src: *const T) -> T;
     /// Perform a volatile store to the `dst` pointer.
@@ -33,7 +83,7 @@ extern "rust-intrinsic" {
 #[macro_export]
 macro_rules! panic(
     () => (
-    panic!("{}", "explicit panic")
+        panic!("{}", "explicit panic")
     );
     ($msg:expr) => ({
         static _MSG_FILE_LINE: (&'static str, &'static str, uint) = ($msg, file!(), line!());
@@ -110,15 +160,35 @@ pub fn str_u8(s: &str) -> U8Iterator {
     }
 }
 
-#[cold] #[inline(never)] // this is the slow path, always
+/*
+    I need the panic calls to be able to hook into board, but we need the
+    panic language items to be defined early so that we can compile. So
+    in order to still allow board to handle panic we simply leave an unresolved
+    symbol for `board_panic` using the cdecl calling convetion. The board will
+    implement this symbol which during linking will be resolved.
+
+    I would have liked for a rust call
+*/
+extern "cdecl" {
+    fn board_panic();
+}
+
+#[cold] #[inline(never)]
 #[lang="panic"]
 pub fn panic(expr_file_line: &(&'static str, &'static str, uint)) -> ! {
+    unsafe { board_panic(); }
     loop { }
 }
 
+#[cold] #[inline(never)]
 #[lang = "panic_fmt"] 
 //pub fn panic_fmt(fmt: &fmt::Arguments, file_line: &(&'static str, uint)) -> ! {
 pub fn panic_fmt() {
     loop { }
 }
 
+#[cold] #[inline(never)]
+#[lang = "panic_bounds_check"]
+pub fn panic_bounds_check(file_line: &(&'static str, uint), index: uint, len: uint) -> ! {
+    loop { }
+}

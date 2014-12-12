@@ -7,6 +7,7 @@
     the kernel when it is built.
 */
 #![no_std]
+#![allow(unused_variables)]
 
 extern crate core;
 
@@ -21,6 +22,8 @@ const SERIAL_BUFFER_FULL: u32 = 1 << 15;
 // when this function becomes empty and does nothing!?
 pub fn debugchar(c: u8) {
     unsafe {
+        let x = box 3u;
+
         let mem: *mut u32 = (SERIAL_BASE + SERIAL_FLAG_REGISTER) as *mut u32;
 
         // a read should happen each iteration of the loop and the value
@@ -38,4 +41,21 @@ pub fn debugstr(s: &str) {
     for c in core::str_u8(s) {
         debugchar(c);
     }
+}
+
+pub fn init() {
+    // let us get a heap operations early on
+    core::heap::addchunk(0x10000, 1024 * 1024 * 8);
+}
+
+/*
+    This comes from crate 'core' where it hands us any panic call so that our
+    board layer can appropriately handle how to panic. In our case we wish to
+    provide some debug output that a panic has occured. I was unable to find
+    a way to make this a pure rust call so I had to call with the cdecl.
+*/
+#[no_mangle]
+pub extern fn board_panic() {
+    debugstr("board panic!");
+    loop { }
 }
