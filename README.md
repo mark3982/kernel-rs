@@ -6,8 +6,8 @@
 
 * minimal and easy tool dependancies
 * minimal kernel footprint
-* easy cross-compiling
-* explore Rust
+* easy as possible cross-compiling
+* exploration of system-level programming with Rust
 
 To accomplish minimal tool dependancies I try to either use or force Rust to do
 everything that it can do and if that fails then I try to use the least painful
@@ -15,6 +15,19 @@ tool to get the job done. If a tool requires more dependancies and a headache
 then I avoid it because my motto is minimal and easy. I know you want to play
 with the kernel and I do not want you to quit before you actually get started so
 my goal is to make it easy.
+
+However, I can only be so successful at using Rust for everything. A few tools
+you will need are:
+
+  1. binutils ld for target
+  2. binutils gas for target
+  3. binutils objcopy for target 
+  4. binutils ar
+  5. python3.x (for build system)
+
+_At the moment you do not need `GCC` because we can do most `C` stuff in Rust, however
+I do use `gas` for the ARM target because it is easier to write a lot of assembly code
+with it than to try to do it through the `asm!` macro in Rust._
 
 For minimal kernel footprint I will do as much as possible to prevent unnessary
 increase in image size because this makes it more attractive for lower memory
