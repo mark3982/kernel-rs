@@ -73,6 +73,8 @@ def build(args, wdir = None, sdir = None):
     wdir = wdir or os.environ['PWD']
     sdir = sdir or os.environ['PWD']
 
+    wdir = sdir + '/build/'
+
     showcmd = args.showcommands or False
 
     # we need to locate our tools unless they were specified
@@ -87,6 +89,7 @@ def build(args, wdir = None, sdir = None):
     tools.add('objcopy', args.objcopy or locatetool('objcopy'))
     tools.add('gas', args.gas or locatetool('as'))
     tools.add('gcc', args.gcc or locatetool('gcc'))
+    tools.add('cp', args.cp or locatetool('cp'))
 
     # now we have our tools we can try to actually build
     print('building board `' + bcolors.OKGREEN + args.board + bcolors.ENDC + '` for ' + bcolors.OKGREEN + args.target + '..')
@@ -135,6 +138,13 @@ def build(args, wdir = None, sdir = None):
 
     # if the board has a hook then let it decide what to use
     membase = boardhookmod.hook_membaseget({'membase': args.membase})['result']
+
+    # if working directory not the same as source directory then
+    # we need to copy our dummy libs there so they will be picked
+    # up and used
+    if wdir != sdir:
+        tools.cp.use(wdir, '%s/libmorestack.a %s/' % (sdir, wdir), showcmd)
+        tools.cp.use(wdir, '%s/libcompiler-rt.a %s/' % (sdir, wdir), showcmd)
 
     # Let us build the rust side of everything
     #$TOOL_RUSTC -C relocation-model=static -C no-stack-check --crate-type rlib ./core/core.rs --target=$ARCH
@@ -209,6 +219,7 @@ def cli():
     parser.add_argument('action', help='must be "boards", "targets", or "build"')
     parser.add_argument('-showcommands', action='store_const', const=True, help='show all shell commands that are executed')
     parser.add_argument('-membase', help='memory address to base image if not position independant')
+    parser.add_argument('-cp', help='path to copy(cp) if need to specify')
     args = parser.parse_args()
 
     # help them figure out what to do
