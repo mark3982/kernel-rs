@@ -2,11 +2,11 @@ ENTRY (_start)
 
 SECTIONS
 {	
-    //. = 0x10000;
+    . = 0x100000;
 	_BOI = .;
     .blob : { 
+    			*(.rodata*)
     			*(.data*) 
-    			*(.rodata*) 
 				*(.boot*)
 				*(.text*) 
 				*(.bss*)
