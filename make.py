@@ -109,19 +109,30 @@ def build(args, wdir = None, sdir = None):
         # 3.2
         boardhookmod = imp.load_source('boardpyhook', boardpyhookmod)
     else:
-        class DummyBoardHooks:
-            def hook_membaseget(args):
-                return {'result': args['membase']}
-        boardhookmod = DummyBoardHooks()
+        class Nothing:
+            pass
+        boardhookmod = Nothing()
 
     targetpyhookmod = '%s/targets/%s/makehook.py' % (sdir, args.target)
     if os.path.exists(targetpyhookmod):
         targethookmod = imp.load_source('targetpybook', targetpyhookmod)
     else:
-        class DummyTargetHooks:
-            def hook_prelinkforobjectfiles(args):
-                return {'result': []}
-        targethookmod = DummyTargetHooks()
+        class Nothing:
+            pass
+        targethookmod = Nothing()
+
+    def trycall(obj, method, args, defret):
+        if not hasattr(obj, method):
+            return defret
+        return getattr(obj, method)(args)
+
+    def dmerge(a, b):
+        return dict(list(a.items()) + list(b.items()))
+
+    stdhookargs = {
+        'cmdlineargs': args, 'tools': tools, 'wdir': wdir, 'sdir': sdir,
+        'target': args.target, 'board': args.board
+    }
 
     #
     # You may notice that the hooks take a dictionary and return a dictionary
@@ -137,7 +148,11 @@ def build(args, wdir = None, sdir = None):
     #
 
     # if the board has a hook then let it decide what to use
-    membase = boardhookmod.hook_membaseget({'membase': args.membase})['result']
+    membase = trycall(
+        boardhookmod, 'hook_membaseget', 
+        {'membase': args.membase},
+        dmerge(stdhookargs, {'result': args.membase})
+    )['result']
 
     # if working directory not the same as source directory then
     # we need to copy our dummy libs there so they will be picked
@@ -151,9 +166,9 @@ def build(args, wdir = None, sdir = None):
     #$TOOL_RUSTC -C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib ./boards/$BOARD/board.rs --target=$ARCH
     #$TOOL_RUSTC -C relocation-model=static --crate-type staticlib -C no-stack-check -L . __main.rs --opt-level 3 --target=$ARCH
     src = '%s/core/core.rs' % sdir
-    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type rlib %s --target=%s' % (src, args.target), showcmd)
+    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
     src = '%s/boards/%s/board.rs' % (sdir, args.board)
-    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib %s --target=%s' % (src, args.target), showcmd)
+    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
     src = '%s/__main.rs' % sdir
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
 
@@ -178,10 +193,11 @@ def build(args, wdir = None, sdir = None):
     tools.ar.use(wdir, 'xvf lib__main.a', showcmd)
 
     # hook for inclusion of any architecture specific files
-    targethookmod.hook_prelinkforobjectfiles({
-        'cmdlineargs': args, 'tools': tools, 'wdir': wdir, 'sdir': sdir,
-        'target': args.target, 'board': args.board
-    })
+    trycall(
+        targethookmod, 'hook_prelinkforobjectfiles',
+        stdhookargs,
+        None
+    )
 
     # the way we are handling arguments *.o does not expand 
     _objfiles = enumfilesbyext(wdir, 'o')
@@ -192,8 +208,22 @@ def build(args, wdir = None, sdir = None):
             continue
         _print(objfile)
         objfiles.append(objfile)
+
+    objfiles.remove('__main.o')
+    objfiles.insert(0, '__main.o')
+
     objfiles = ' '.join(objfiles)
-    tools.ld.use(wdir, '%s -o kernel.elf -Ttext %s' % (objfiles, membase), showcmd)
+
+    extraopts = trycall(
+        boardhookmod, 'hook_prelinkforoptions',
+        stdhookargs,
+        ''
+    )
+
+    # if contains something add the extra space before it
+    if extraopts != '': extraopts = ' ' + extraopts
+
+    tools.ld.use(wdir, '%s%s -o kernel.elf -Ttext %s' % (objfiles, extraopts, membase), showcmd)
 
     #
     # If you need a flat binary then this will do the
@@ -203,7 +233,7 @@ def build(args, wdir = None, sdir = None):
     # bugs.
     #
     #echo $TOOL_OBJCOPY -j .text -O binary $OUTBASENAME.elf $OUTBASENAME.bin
-    tools.objcopy.use(wdir, '-j .text -O binary kernel.elf kernel.bin', showcmd)
+    tools.objcopy.use(wdir, '-j .blob -O binary kernel.elf kernel.bin', showcmd)
 
 
 def cli():

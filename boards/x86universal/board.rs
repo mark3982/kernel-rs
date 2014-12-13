@@ -10,6 +10,8 @@
 
 extern crate core;
 
-pub fn test() -> int {
-    88
+#[no_mangle]
+pub extern fn board_panic() {
+    //debugstr("board panic!");
+    loop { }
 }

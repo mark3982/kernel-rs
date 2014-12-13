@@ -43,7 +43,13 @@ static MBH: MultiBootHeader = MultiBootHeader {
 
 #[cfg(target_arch = "x86")]
 #[no_mangle]
-pub fn ___entry() {
+pub fn _start() {
+    unsafe {
+        asm!("mov %dx, 0x3f8");
+        asm!("mov %al, 65");
+        asm!("outb %al, %dx");
+    }
+
     unsafe {
         asm!("loop:"); 
         asm!("mov 0xb8000, %eax");
