@@ -15,9 +15,12 @@ def printerror(s):
     print(bcolors.FAIL + 'error: ' + bcolors.ENDC + s)
 def printwarn(s):
     print(bcolors.WARNING + 'error: ' + bcolors.ENDC + s)
-def fail(s):
-    printerror(s)
-    exit()
+def fail(s = None, nostackdump = False):
+    if s is not None:
+        printerror(s)
+    if nostackdump:
+        exit()
+    raise Exception('MAKE FAILURE')
     
 class bcolors:
     HEADER = '\033[95m'

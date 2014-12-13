@@ -35,7 +35,7 @@ class Tool:
             print('ARGS: ' + args)
             print('OUTPUT:')
             print(bcolors.DIM + stderr)
-            exit()
+            fail()
 
 class Tools:
     def __init__(self):
@@ -279,6 +279,8 @@ class ArgumentParser:
                 opts[nme] = val
             elif arg[0] == '-':
                 letters = arg[1:]
+                if letters.find('=') > -1:
+                    fail('For `%s` maybe you meant `-%s`?' % (arg, arg), nostackdump = True)
                 for letter in letters:
                     opts[letter] = True
             else:

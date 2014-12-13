@@ -22,8 +22,6 @@ const SERIAL_BUFFER_FULL: u32 = 1 << 15;
 // when this function becomes empty and does nothing!?
 pub fn debugchar(c: u8) {
     unsafe {
-        let x = box 3u;
-
         let mem: *mut u32 = (SERIAL_BASE + SERIAL_FLAG_REGISTER) as *mut u32;
 
         // a read should happen each iteration of the loop and the value

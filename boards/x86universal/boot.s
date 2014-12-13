@@ -10,3 +10,14 @@
 .long FLAGS
 .long CHECKSUM
 
+stack_bottom:
+.skip 4096
+stack_top:
+
+.section .text
+.global _start
+.type _start, @function
+_start:
+    mov $stack_top, %esp
+    call kentry
+
