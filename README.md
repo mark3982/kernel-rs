@@ -128,6 +128,12 @@ This section includes some helpful information on the different targets.
 
   `python3 make.py --target=i686-unknown-linux-gnu --board=x86universal --build --ld=/usr/bin/i686-ld --gas=/usr/bin/i686-as`
 
+  `qemu-system-i686 -kernel ./build/kernel.elf -serial stdio`
+
   This will build an image for QEMU `-kernel <image>` targeting ARM 32-bit:
 
   `python3 make.py --target=arm-unknown-linux-gnueabi --board=realview-eb-mpcore --build --gas=/usr/bin/arm-linux-gnueabi-as --ld=/usr/bin/arm-linux-gnueabi-ld`
+
+  `qemu-system-arm -kernel ./build/kernel.elf -serial stdio`
+
+  _At the moment you need to clean the directory before building! Try `git clean -fd`!_
