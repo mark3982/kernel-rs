@@ -16,7 +16,7 @@ extern crate core;
 //}
 
 #[cfg(target_arch = "x86")]
-struct MultiBootHeader {
+pub struct MultiBootHeader {
     magic:          u32,
     flags:          u32,
     chksum:         i32
@@ -34,8 +34,8 @@ struct MultiBootHeader {
 
     http://wiki.osdev.org/Bare_Bones
 */
-#[cfg(target_arch = "x86")]
-static MBH: MultiBootHeader = MultiBootHeader { 
+//#[cfg(target_arch = "x86")]
+pub static MBH: MultiBootHeader = MultiBootHeader { 
     magic:          0x1badb002,
     flags:          0x2,
     chksum:         -(0x1badb002 + 0x2)
