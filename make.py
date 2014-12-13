@@ -258,7 +258,7 @@ class ArgumentParser:
     def add_argument(self, name, help=''):
         self.dargs[name] = help
 
-    def displayhelp(self):
+    def showhelp(self):
         print(self.description)
         print('')
         print('arguments:')
@@ -267,7 +267,7 @@ class ArgumentParser:
             if ml is None or len(k) > ml:
                 ml = len(k)
         for k in self.dargs:
-            print('  -%s%s' % (k.ljust(ml + 2), self.dargs[k]))
+            print('  %s%s' % (k.ljust(ml + 2), self.dargs[k]))
         print('')
 
     def parse_args(self):
@@ -295,24 +295,32 @@ class ArgumentParser:
 
 def cli():
     parser = ArgumentParser(description='kernel-rs build system')
-    parser.add_argument('target', help='target architecture')
-    parser.add_argument('board', help='target board')
-    parser.add_argument('rustc', help='path to the Rust language compiler')
-    parser.add_argument('ar', help='path to the binutils archive tool')
-    parser.add_argument('ld', help='path to the binutils linker tool')
-    parser.add_argument('objcopy', help='path to the binutils objcopy tool')
-    parser.add_argument('gas', help='path to the binutils assembler tool')
-    parser.add_argument('gcc', help='path to the GCC compiler')
-    parser.add_argument('action', help='must be "boards", "targets", or "build"')
-    parser.add_argument('showcommands', help='show all shell commands that are executed')
-    parser.add_argument('membase', help='memory address to base image if not position independant')
-    parser.add_argument('cp', help='path to copy(cp) if need to specify')
+    parser.add_argument('--target=<name>', help='target architecture')
+    parser.add_argument('--board=<name>', help='target board')
+    parser.add_argument('--rustc=<path>', help='path to the Rust language compiler')
+    parser.add_argument('--ar=<path>', help='path to the binutils archive tool')
+    parser.add_argument('--ld=<path>', help='path to the binutils linker tool')
+    parser.add_argument('--objcopy=<path>', help='path to the binutils objcopy tool')
+    parser.add_argument('--gas=<path>', help='path to the binutils assembler tool')
+    parser.add_argument('--gcc=<path>', help='path to the GCC compiler')
+    parser.add_argument('--showcommands', help='show all shell commands that are executed')
+    parser.add_argument('--membase=<address>', help='memory address to base image if not position independant')
+    parser.add_argument('--cp=<path>', help='path to copy(cp) if need to specify')
+    parser.add_argument('--help', help='display what you are currently reading')
     args = parser.parse_args()
 
-    if not args.build and not args.showboards and not args.showtargets:
-        printerror('error: must use --build or --showboards or --showtargets') 
+    if not args.build and not args.showboards and not args.showtargets and not args.help:
+        printerror('error: must use --build or --showboards or --showtargets or --help') 
         return
 
+    if args.help: 
+        parser.showhelp()
+        print('examples: (some options take arguments others do not)')
+        print('  --<argument>') 
+        print('  --<argument>=<value>')
+        print('  --gas=/usr/bin/other-as')
+        print('')
+        return
     if args.showboards: return showboards()
     if args.showtargets: return showtargets()
     if args.build: return build(args)
