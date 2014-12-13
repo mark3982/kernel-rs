@@ -105,3 +105,19 @@ This section includes some helpful information on the different targets.
  be linked for the VMA address. For a BIN format QEMU will load where it desires
  (is programmed to load) therefore your code must be position independant or be
  linked for the propery address.
+
+### How To Build
+
+  1. You need to figure out what target you want, and if supported.
+    python3 make.py --showtargets
+
+  2. Next, you need to figure out what board you want:
+    python3 make.py --showboards
+
+  3. Now, figure out what options you want to set or enable:
+    python3 make.py --help
+
+  4. Put everything together, for example:
+    python3 make.py --target=i686-unknown-linux-gnu --board=x86universal --ld=/usr/bin/i686-ld --gas=/usr/bin/i686-as --build
+
+  5. Hopefully the build completed OK!
