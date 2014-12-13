@@ -235,31 +235,87 @@ def build(args, wdir = None, sdir = None):
     #echo $TOOL_OBJCOPY -j .text -O binary $OUTBASENAME.elf $OUTBASENAME.bin
     tools.objcopy.use(wdir, '-j .blob -O binary kernel.elf kernel.bin', showcmd)
 
+class Arguments:
+    def __init__(self, fargs, pargs):
+        self.fargs = fargs
+        self.pargs = pargs
+
+    def __getattr__(self, name):
+        if name in self.fargs:
+            return self.fargs[name]
+        return False
+
+    def get_positional(self, index):
+        if index > len(self.pargs):
+            return False
+        return self.pargs[index]
+
+class ArgumentParser:
+    def __init__(self, description):
+        self.dargs = {}
+        self.description = description
+
+    def add_argument(self, name, help=''):
+        self.dargs[name] = help
+
+    def displayhelp(self):
+        print(self.description)
+        print('')
+        print('arguments:')
+        ml = None
+        for k in self.dargs:
+            if ml is None or len(k) > ml:
+                ml = len(k)
+        for k in self.dargs:
+            print('  -%s%s' % (k.ljust(ml + 2), self.dargs[k]))
+        print('')
+
+    def parse_args(self):
+        opts = {}
+        pos = []
+        args = sys.argv
+        for arg in args:
+            if arg.startswith('--'):
+                arg = arg[2:]
+                if arg.find('=') > -1:
+                    val = arg[arg.find('=') + 1:]
+                    nme = arg[0:arg.find('=')]
+                else:
+                    nme = arg
+                    val = True
+                opts[nme] = val
+            elif arg[0] == '-':
+                letters = arg[1:]
+                for letter in letters:
+                    opts[letter] = True
+            else:
+                pos.append(arg)
+        return Arguments(opts, pos)
+
 
 def cli():
-    parser = argparse.ArgumentParser(description='kernel-rs build system', epilog='Try build!')
-    parser.add_argument('-target', help='target architecture')
-    parser.add_argument('-board', help='target board')
-    parser.add_argument('-rustc', help='path to the Rust language compiler')
-    parser.add_argument('-ar', help='path to the binutils archive tool')
-    parser.add_argument('-ld', help='path to the binutils linker tool')
-    parser.add_argument('-objcopy', help='path to the binutils objcopy tool')
-    parser.add_argument('-gas', help='path to the binutils assembler tool')
-    parser.add_argument('-gcc', help='path to the GCC compiler')
+    parser = ArgumentParser(description='kernel-rs build system')
+    parser.add_argument('target', help='target architecture')
+    parser.add_argument('board', help='target board')
+    parser.add_argument('rustc', help='path to the Rust language compiler')
+    parser.add_argument('ar', help='path to the binutils archive tool')
+    parser.add_argument('ld', help='path to the binutils linker tool')
+    parser.add_argument('objcopy', help='path to the binutils objcopy tool')
+    parser.add_argument('gas', help='path to the binutils assembler tool')
+    parser.add_argument('gcc', help='path to the GCC compiler')
     parser.add_argument('action', help='must be "boards", "targets", or "build"')
-    parser.add_argument('-showcommands', action='store_const', const=True, help='show all shell commands that are executed')
-    parser.add_argument('-membase', help='memory address to base image if not position independant')
-    parser.add_argument('-cp', help='path to copy(cp) if need to specify')
+    parser.add_argument('showcommands', help='show all shell commands that are executed')
+    parser.add_argument('membase', help='memory address to base image if not position independant')
+    parser.add_argument('cp', help='path to copy(cp) if need to specify')
     args = parser.parse_args()
 
-    # help them figure out what to do
-    if args.action not in ('boards', 'targets', 'build'):
-        printerror('error: `%s` not recognized; must be `boards`, `targets`, or `build`' % args.action) 
+    if not args.build and not args.showboards and not args.showtargets:
+        printerror('error: must use --build or --showboards or --showtargets') 
         return
 
-    if args.action == 'boards': return showboards()
-    if args.action == 'targets': return showtargets()
-    if args.action == 'build': return build(args)
+    if args.showboards: return showboards()
+    if args.showtargets: return showtargets()
+    if args.build: return build(args)
     
 
 
