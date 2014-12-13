@@ -5,9 +5,9 @@ SECTIONS
     . = 0x100000;
 	_BOI = .;
     .blob : { 
+    			*(.boot*)
     			*(.rodata*)
     			*(.data*) 
-				*(.boot*)
 				*(.text*) 
 				*(.bss*)
 	}

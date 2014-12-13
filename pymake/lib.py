@@ -7,6 +7,17 @@ import os
 def __executecmd(cwd, args):
     p = subprocess.Popen(args, cwd = cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     return (p.stdout.read().decode('utf-8', 'ignore'), p.stderr.read().decode('utf-8', 'ignore'))
+
+_print = print
+def print(s):
+    _print(s + bcolors.ENDC)
+def printerror(s):
+    print(bcolors.FAIL + 'error: ' + bcolors.ENDC + s)
+def printwarn(s):
+    print(bcolors.WARNING + 'error: ' + bcolors.ENDC + s)
+def fail(s):
+    printerror(s)
+    exit()
     
 class bcolors:
     HEADER = '\033[95m'

@@ -5,17 +5,6 @@ import importlib.machinery
 import imp
 from pymake.lib import *
 
-_print = print
-def print(s):
-    _print(s + bcolors.ENDC)
-def printerror(s):
-    print(bcolors.FAIL + 'error: ' + bcolors.ENDC + s)
-def printwarn(s):
-    print(bcolors.WARNING + 'error: ' + bcolors.ENDC + s)
-def fail(s):
-    printerror(s)
-    exit()
-
 def showboards():
     showdirofdesc('./boards')
 
@@ -198,6 +187,11 @@ def build(args, wdir = None, sdir = None):
         stdhookargs,
         None
     )
+    trycall(
+        boardhookmod, 'hook_prelinkforobjectfiles',
+        stdhookargs,
+        None
+    )
 
     # the way we are handling arguments *.o does not expand 
     _objfiles = enumfilesbyext(wdir, 'o')
@@ -206,7 +200,6 @@ def build(args, wdir = None, sdir = None):
     for objfile in _objfiles:
         if objfile.startswith('r-compiler-rt-') or objfile.startswith('r-morestack-'):
             continue
-        _print(objfile)
         objfiles.append(objfile)
 
     objfiles.remove('__main.o')
