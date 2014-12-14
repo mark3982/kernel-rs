@@ -6,10 +6,16 @@ import imp
 from pymake.lib import *
 
 def showboards():
-    showdirofdesc('./boards')
+    print('boards:')
+    showdirofdesc(' ', './boards')
 
 def showtargets():
-    showdirofdesc('./targets')
+    print('targets:')
+    showdirofdesc(' ', './targets')
+
+def showsystems():
+    print('systems:')
+    showdirofdesc(' ', './systems')
 
 class Tool:
     def __init__(self, name, path):
@@ -59,10 +65,11 @@ def build(args, wdir = None, sdir = None):
     if not os.path.exists('./targets/' + args.target):
         return printerror('The target `%s` does not exist!' % args.target)
 
-    wdir = wdir or os.environ['PWD']
-    sdir = sdir or os.environ['PWD']
+    wdir = args.wdir or (os.environ['PWD'] + '/build/')
+    sdir = args.sdir or os.environ['PWD']
 
-    wdir = sdir + '/build/'
+    if os.path.exists(wdir) and len(os.listdir(wdir)) > 0 and not args.forcewdir:
+        fail('working directory not empty and this can cause problems; to continue pass ' + bcolors.OKGREEN + '--forcewdir', nostackdump = True)
 
     showcmd = args.showcommands or False
 
@@ -147,6 +154,8 @@ def build(args, wdir = None, sdir = None):
     # we need to copy our dummy libs there so they will be picked
     # up and used
     if wdir != sdir:
+        if not os.path.exists(wdir):
+            os.makedirs(wdir)
         tools.cp.use(wdir, '%s/libmorestack.a %s/' % (sdir, wdir), showcmd)
         tools.cp.use(wdir, '%s/libcompiler-rt.a %s/' % (sdir, wdir), showcmd)
 
@@ -302,10 +311,13 @@ def cli():
     parser.add_argument('--membase=<address>', help='memory address to base image if not position independant')
     parser.add_argument('--cp=<path>', help='path to copy(cp) if need to specify')
     parser.add_argument('--help', help='display what you are currently reading')
+    parser.add_argument('--wdir', help='working directory (contains temporary files)')
+    parser.add_argument('--sdir', help='overide for source directory')
+    parser.add_argument('--system', help='target system')
     args = parser.parse_args()
 
-    if not args.build and not args.showboards and not args.showtargets and not args.help:
-        printerror('error: must use --build or --showboards or --showtargets or --help') 
+    if not args.showall and not args.build and not args.showboards and not args.showtargets and not args.help and not args.showsystems:
+        printerror('error: must use --build or --showboards or --showtargets or --showsystems or --help') 
         return
 
     if args.help: 
@@ -316,6 +328,13 @@ def cli():
         print('  --gas=/usr/bin/other-as')
         print('')
         return
+
+    if args.showall:
+        showsystems()
+        showboards()
+        showtargets()
+        return
+    if args.showsystems: return showsystems()
     if args.showboards: return showboards()
     if args.showtargets: return showtargets()
     if args.build: return build(args)
