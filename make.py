@@ -57,13 +57,15 @@ class Tools:
 def build(args, wdir = None, sdir = None):
     # make sure the board and target are valid
     if not args.target:
-        return printerror('You must specify --target=TARGET, try passing `targets` for action to list targets.')
+        fail('You must specify --target=TARGET, try passing `targets` for action to list targets.', nostackdump = True)
     if not args.board:
-        return printerror('You must specify --board=BOARD, try passing `boards` for action to list boards.')
+        fail('You must specify --board=BOARD, try passing `boards` for action to list boards.', nostackdump = True)
     if not os.path.exists('./boards/' + args.board):
-        return printerror('The board `%s` does not exist!' % args.board)
+        fail('The board `%s` does not exist!' % args.board, nostackdump = True)
     if not os.path.exists('./targets/' + args.target):
-        return printerror('The target `%s` does not exist!' % args.target)
+        fail('The target `%s` does not exist!' % args.target, nostackdump = True)
+    if not os.path.exists('./systems/' + args.system):
+        fail('The system `%s` does not exist!' % args.system, nostackdump = True)
 
     wdir = args.wdir or (os.environ['PWD'] + '/build/')
     sdir = args.sdir or os.environ['PWD']

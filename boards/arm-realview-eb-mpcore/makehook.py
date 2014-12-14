@@ -37,12 +37,12 @@ def hook_prelinkforobjectfiles(args):
 
     if buildtype not in ('qemu', 'rom'):
         fail('--boardimagetype must be `qemu` or `rom`')
-
     if buildtype == 'qemu':
         tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % ('qemuboot.o', sdir, board, 'qemuboot.s'), clargs.showcommands)
     if buildtype == 'rom':
         if not clargs.initialstack:
             fail('for --boardimagetype=rom you must specify --initialstack=<address>') 
+        fail('ROM mode not implemented yet! (hack the source and implement it!)')
         tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % ('romboot.o', sdir, board, 'romboot.s'), clargs.showcommands)
 
     #nodes = os.listdir('%s/boards/%s/' % (sdir, board))
