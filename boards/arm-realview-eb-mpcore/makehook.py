@@ -20,19 +20,35 @@ def hook_membaseget(args):
 def hook_prelinkforoptions(args):
     sdir = args['sdir']
     board = args['board']
+    clargs = args['cmdlineargs']
+
     return '-T%s/boards/%s/link.ld' % (sdir, board)
 
 def hook_prelinkforobjectfiles(args):
     tools = args['tools']
     wdir = args['wdir']
     sdir = args['sdir']
+
     target = args['target']
     board = args['board']
+    clargs = args['cmdlineargs']
 
-    nodes = os.listdir('%s/boards/%s/' % (sdir, board))
-    for node in nodes:
-        if node.find('.') > -1 and node[node.find('.') + 1:] == 's':
-            objname = node[0:node.find('.')] + '.o'
-            tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % (objname, sdir, board, node), args['cmdlineargs'].showcommands)
+    buildtype = clargs.boardimagetype or 'qemu'
+
+    if buildtype not in ('qemu', 'rom'):
+        fail('--boardimagetype must be `qemu` or `rom`')
+
+    if buildtype == 'qemu':
+        tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % ('qemuboot.o', sdir, board, 'qemuboot.s'))
+    if buildtype == 'rom':
+        if not clargs.initialstack:
+            fail('for --boardimagetype=rom you must specify --initialstack=<address>') 
+        tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % ('romboot.o', sdir, board, 'romboot.s'))
+
+    #nodes = os.listdir('%s/boards/%s/' % (sdir, board))
+    #for node in nodes:
+    #    if node.find('.') > -1 and node[node.find('.') + 1:] == 's':
+    #        objname = node[0:node.find('.')] + '.o'
+    #        tools.gas.use(wdir, '-o %s %s/boards/%s/%s' % (objname, sdir, board, node), args['cmdlineargs'].showcommands)
 
     return {}

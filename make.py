@@ -56,9 +56,9 @@ class Tools:
 
 def build(args, wdir = None, sdir = None):
     # make sure the board and target are valid
-    if args.target is None:
+    if not args.target:
         return printerror('You must specify --target=TARGET, try passing `targets` for action to list targets.')
-    if args.board is None:
+    if not args.board:
         return printerror('You must specify --board=BOARD, try passing `boards` for action to list boards.')
     if not os.path.exists('./boards/' + args.board):
         return printerror('The board `%s` does not exist!' % args.board)
@@ -167,7 +167,7 @@ def build(args, wdir = None, sdir = None):
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
     src = '%s/boards/%s/board.rs' % (sdir, args.board)
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
-    src = '%s/__main.rs' % sdir
+    src = '%s/systems/%s/system.rs' % (sdir, args.system)
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
 
     #
@@ -188,7 +188,7 @@ def build(args, wdir = None, sdir = None):
     #$TOOL_AR xvf lib__main.a
     #rm *-test.o
     #$TOOL_LD *.o $LDOPTS -o kernel.elf -Ttext $MEM_BASE
-    tools.ar.use(wdir, 'xvf lib__main.a', showcmd)
+    tools.ar.use(wdir, 'xvf libsystem.a', showcmd)
 
     # hook for inclusion of any architecture specific files
     trycall(
@@ -211,8 +211,13 @@ def build(args, wdir = None, sdir = None):
             continue
         objfiles.append(objfile)
 
-    objfiles.remove('__main.o')
-    objfiles.insert(0, '__main.o')
+    # old code to force start function to top of image, but
+    # now we do that using the .boot section instead which
+    # allows us to create a flat binary where the entry point
+    # is the first byte of the image; for ELF the entry point
+    # can be anywhere inside the image
+    #objfiles.remove('__main.o')
+    #objfiles.insert(0, '__main.o')
 
     objfiles = ' '.join(objfiles)
 
@@ -334,9 +339,15 @@ def cli():
         showboards()
         showtargets()
         return
+
     if args.showsystems: return showsystems()
     if args.showboards: return showboards()
     if args.showtargets: return showtargets()
+
+    if not args.system: 
+        print('setting' + bcolors.OKBLUE + ' --system=serialdemo' + bcolors.ENDC + '. Try ' + bcolors.OKBLUE + '--showsystems' + bcolors.ENDC + ' or ' + bcolors.OKBLUE + '--showall' + bcolors.ENDC + '.')
+        args.system = 'serialdemo'
+
     if args.build: return build(args)
     
 
