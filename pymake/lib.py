@@ -38,8 +38,12 @@ def listdirfull(dir):
         out.append('%s/%s' % (dir, node))
     return out
 
-def showdirofdesc(dir):
+def showdirofdesc(pad, dir):
     nodes = os.listdir(dir)
+    mx = None
+    for node in nodes:
+        if mx is None or len(node) > mx:
+            mx = len(node)
     for node in nodes:
         fnode = '%s/%s' % (dir, node)
         if os.path.isdir(fnode):
@@ -50,7 +54,7 @@ def showdirofdesc(dir):
                 fd.close()
             else:
                 desc = ''
-            print(bcolors.OKGREEN + node.ljust(50) + bcolors.ENDC + '- ' + desc)
+            print(pad + bcolors.OKGREEN + node.ljust(mx + 2) + bcolors.ENDC + '- ' + desc)
 
 
 def isindir(dir, name):

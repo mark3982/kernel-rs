@@ -124,16 +124,12 @@ This section includes some helpful information on the different targets.
 
 ### Examples
 
-  This will build an image for QEMU `-kernel <image>` targeting X86 i686:
+  To compile a simple serial demonstration for X86-i686 and ARM-32:
 
-  `python3 make.py --target=i686-unknown-linux-gnu --board=x86universal --build --ld=/usr/bin/i686-ld --gas=/usr/bin/i686-as`
+    This will build an image for QEMU `-kernel <image> -serial stdio` targeting X86 i686:
 
-  `qemu-system-i686 -kernel ./build/kernel.elf -serial stdio`
+    `python3 make.py --target=i686-unknown-linux-gnu --board=x86-generic --build --ld=/usr/bin/i686-ld --gas=/usr/bin/i686-as`
 
-  This will build an image for QEMU `-kernel <image>` targeting ARM 32-bit:
+    This will build an image for QEMU `-kernel <image> -serial stdio -machine realview-eb-mpcore` targeting ARM 32-bit:
 
-  `python3 make.py --target=arm-unknown-linux-gnueabi --board=realview-eb-mpcore --build --gas=/usr/bin/arm-linux-gnueabi-as --ld=/usr/bin/arm-linux-gnueabi-ld`
-
-  `qemu-system-arm -kernel ./build/kernel.elf -serial stdio`
-
-  _At the moment you need to clean the directory before building! Try `git clean -fd`!_
+    `python3 make.py --target=arm-unknown-linux-gnueabi --board=arm-realview-eb-mpcore --build --gas=/usr/bin/arm-linux-gnueabi-as --ld=/usr/bin/arm-linux-gnueabi-ld`

@@ -6,10 +6,16 @@ import imp
 from pymake.lib import *
 
 def showboards():
-    showdirofdesc('./boards')
+    print('boards:')
+    showdirofdesc(' ', './boards')
 
 def showtargets():
-    showdirofdesc('./targets')
+    print('targets:')
+    showdirofdesc(' ', './targets')
+
+def showsystems():
+    print('systems:')
+    showdirofdesc(' ', './systems')
 
 class Tool:
     def __init__(self, name, path):
@@ -50,19 +56,22 @@ class Tools:
 
 def build(args, wdir = None, sdir = None):
     # make sure the board and target are valid
-    if args.target is None:
-        return printerror('You must specify --target=TARGET, try passing `targets` for action to list targets.')
-    if args.board is None:
-        return printerror('You must specify --board=BOARD, try passing `boards` for action to list boards.')
+    if not args.target:
+        fail('You must specify --target=TARGET, try passing `targets` for action to list targets.', nostackdump = True)
+    if not args.board:
+        fail('You must specify --board=BOARD, try passing `boards` for action to list boards.', nostackdump = True)
     if not os.path.exists('./boards/' + args.board):
-        return printerror('The board `%s` does not exist!' % args.board)
+        fail('The board `%s` does not exist!' % args.board, nostackdump = True)
     if not os.path.exists('./targets/' + args.target):
-        return printerror('The target `%s` does not exist!' % args.target)
+        fail('The target `%s` does not exist!' % args.target, nostackdump = True)
+    if not os.path.exists('./systems/' + args.system):
+        fail('The system `%s` does not exist!' % args.system, nostackdump = True)
 
-    wdir = wdir or os.environ['PWD']
-    sdir = sdir or os.environ['PWD']
+    wdir = args.wdir or (os.environ['PWD'] + '/build/')
+    sdir = args.sdir or os.environ['PWD']
 
-    wdir = sdir + '/build/'
+    if os.path.exists(wdir) and len(os.listdir(wdir)) > 0 and not args.forcewdir:
+        fail('working directory not empty and this can cause problems; to continue pass ' + bcolors.OKGREEN + '--forcewdir', nostackdump = True)
 
     showcmd = args.showcommands or False
 
@@ -147,6 +156,8 @@ def build(args, wdir = None, sdir = None):
     # we need to copy our dummy libs there so they will be picked
     # up and used
     if wdir != sdir:
+        if not os.path.exists(wdir):
+            os.makedirs(wdir)
         tools.cp.use(wdir, '%s/libmorestack.a %s/' % (sdir, wdir), showcmd)
         tools.cp.use(wdir, '%s/libcompiler-rt.a %s/' % (sdir, wdir), showcmd)
 
@@ -158,8 +169,9 @@ def build(args, wdir = None, sdir = None):
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
     src = '%s/boards/%s/board.rs' % (sdir, args.board)
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
-    src = '%s/__main.rs' % sdir
-    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
+    src = '%s/systems/%s/system.rs' % (sdir, args.system)
+    print(src)
+    tools.rustc.use(wdir, '-C lto -C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
 
     #
     # We need to get all the object files out and link
@@ -179,7 +191,7 @@ def build(args, wdir = None, sdir = None):
     #$TOOL_AR xvf lib__main.a
     #rm *-test.o
     #$TOOL_LD *.o $LDOPTS -o kernel.elf -Ttext $MEM_BASE
-    tools.ar.use(wdir, 'xvf lib__main.a', showcmd)
+    tools.ar.use(wdir, 'xvf libsystem.a', showcmd)
 
     # hook for inclusion of any architecture specific files
     trycall(
@@ -202,8 +214,13 @@ def build(args, wdir = None, sdir = None):
             continue
         objfiles.append(objfile)
 
-    objfiles.remove('__main.o')
-    objfiles.insert(0, '__main.o')
+    # old code to force start function to top of image, but
+    # now we do that using the .boot section instead which
+    # allows us to create a flat binary where the entry point
+    # is the first byte of the image; for ELF the entry point
+    # can be anywhere inside the image
+    #objfiles.remove('__main.o')
+    #objfiles.insert(0, '__main.o')
 
     objfiles = ' '.join(objfiles)
 
@@ -302,10 +319,13 @@ def cli():
     parser.add_argument('--membase=<address>', help='memory address to base image if not position independant')
     parser.add_argument('--cp=<path>', help='path to copy(cp) if need to specify')
     parser.add_argument('--help', help='display what you are currently reading')
+    parser.add_argument('--wdir', help='working directory (contains temporary files)')
+    parser.add_argument('--sdir', help='overide for source directory')
+    parser.add_argument('--system', help='target system')
     args = parser.parse_args()
 
-    if not args.build and not args.showboards and not args.showtargets and not args.help:
-        printerror('error: must use --build or --showboards or --showtargets or --help') 
+    if not args.showall and not args.build and not args.showboards and not args.showtargets and not args.help and not args.showsystems:
+        printerror('error: must use --build or --showboards or --showtargets or --showsystems or --help') 
         return
 
     if args.help: 
@@ -316,8 +336,21 @@ def cli():
         print('  --gas=/usr/bin/other-as')
         print('')
         return
+
+    if args.showall:
+        showsystems()
+        showboards()
+        showtargets()
+        return
+
+    if args.showsystems: return showsystems()
     if args.showboards: return showboards()
     if args.showtargets: return showtargets()
+
+    if not args.system: 
+        print('setting' + bcolors.OKBLUE + ' --system=serialdemo' + bcolors.ENDC + '. Try ' + bcolors.OKBLUE + '--showsystems' + bcolors.ENDC + ' or ' + bcolors.OKBLUE + '--showall' + bcolors.ENDC + '.')
+        args.system = 'serialdemo'
+
     if args.build: return build(args)
     
 

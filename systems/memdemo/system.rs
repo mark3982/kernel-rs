@@ -8,30 +8,6 @@
 extern crate board;
 extern crate core;
 
-const SERIAL_BASE: u32 = 0x10009000;
-
-#[cfg(target_arch = "arm")]
-#[no_mangle]
-pub fn _start() {
-    // little testing code to make sure CPU is reaching
-    // this point by emitting a character to the serial
-    // output
-    //unsafe {
-    //    let mem: *mut u32 = SERIAL_BASE as *mut u32;
-    //    *mem = 65 as u32;
-    //}
-
-    //loop { }
-    
-    unsafe {
-        asm!("mov sp, $0" : : "i"(0x2000u));
-        asm!("b kentry");
-    }
-    
-    // make sure we do not fly by if something bad happens
-    loop { }
-}
-
 #[no_mangle]
 pub extern fn memset() { loop {} }
 #[no_mangle]
