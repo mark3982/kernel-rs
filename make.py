@@ -170,7 +170,8 @@ def build(args, wdir = None, sdir = None):
     src = '%s/boards/%s/board.rs' % (sdir, args.board)
     tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --extern core=libcore.rlib --crate-type rlib %s --target=%s --opt-level 3' % (src, args.target), showcmd)
     src = '%s/systems/%s/system.rs' % (sdir, args.system)
-    tools.rustc.use(wdir, '-C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
+    print(src)
+    tools.rustc.use(wdir, '-C lto -C relocation-model=static -C no-stack-check --crate-type staticlib -L . --opt-level 3 %s --target=%s' % (src, args.target), showcmd)
 
     #
     # We need to get all the object files out and link
